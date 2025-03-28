@@ -1,0 +1,90 @@
+Appendix II – Metadata on SGIF Information
+
+The SGIF SQL database contains systematically organized rural fire data since 2001. It also includes data on other topics related to rural fires, such as meteorology, orography, infrastructure, and land use. The following table presents the list and description of the variables associated with each rural fire.
+
+
+VARIABLE	              DESCRIPTION
+CODIGO-	SGIF code for the fire – Forest Service code
+CODIGOSADO-	SADO code for the fire – Civil protection Code
+ANO-	Year of the alert date
+TIPO-	Forestal or Agricultural
+DHINICIO-	Date/Time of the alert
+DH1INTERVENCAO-	Date/Time of the first intervention
+DHRESOLUCAO-	Date/Time of the resolution
+DHCONCLUSAO-	Date/Time of the conclusion
+DHFIM-	Date/Time of extinction
+DURACAOHORAS-	Duration in number of hours
+AREAPOV-	Burned area of forest stands (ha)
+AREAMATO-	Burned area of shrublands (ha)
+AREAAGRIC-	Burned area of agricultural lands (ha)
+AREATOTAL-	Total burned area (ha)
+NUTS2-	NUTS II region of the fire's point of origin
+NUTS3-	NUTS III region of the fire's point of origin
+DISTRITO-	District of the fire's point of origin
+CONCELHO-	Municipality of the fire's point of origin
+FREGUESIA-	Parish of the fire's point of origin
+LOCAL-	Nearest location to the fire's point of origin
+INE-	INE code of the parish at the fire's point of origin
+PERIMETRO-	National forest or forest perimeter at the point of origin
+APS-	Protected area (RNAP) at the point of origin
+X_20790-	X coordinate in EPSG:20790 Lisbon (Lisbon) / Portuguese National Grid
+Y_20790-	X coordinate in EPSG:20790 Lisbon (Lisbon) / Portuguese National Grid
+LAT_4326-	Latitude in EPSG:4326 WGS 84 -- WGS84 - World Geodetic System 1984
+LON_4326-	Longitude in EPSG:4326 WGS 84 -- WGS84 - World Geodetic System 1984
+X_3763-	X coordinate in EPSG:3763 ETRS89 / Portugal TM06
+Y_3763-	Y coordinate in ETRS89 (PT-TM06)
+MODFARSITE-	Farsite model of the burn area at the point of origin
+AREAMANCHAMODFARSITE-	Burn area of the Farsite model at the point of origin (ha)
+ALTITUDEMEDIA-	Average altitude of the 1x1 km grid at the point of origin
+DECLIVEMEDIO-	Average slope of the 1x1 km grid at the point of origin (%)
+DENSIDADERV-	Road density in the 1x1 km grid (m/ha)
+COSN5VARIEDADE-	Number of different COS N5 classes in the 1x1 km grid
+PERIGOSIDADE-	Structural hazard
+FWI-	Meteorological index
+DSR-	Meteorological index
+ISI-	Meteorological index
+DC-	Meteorological index
+DMC-	Meteorological index
+FFMC-	Meteorological index
+BUI-	Meteorological index
+THC-	Meteorological index
+DIST_CBS_M-	Straight-line distance to the nearest fire station (m)
+CBS-	Nearest fire station in a straight line
+NINCSIMULDISTRITO-	Number of fires that were simultaneously active (fully or partially) with the recorded fire and had their point of origin in the same district as the recorded fire
+NINCSIMULCONCELHO-	Number of fires that were simultaneously active (fully or partially) with the recorded fire and had their point of origin in the same municipality as the recorded fire
+NINCSIMULDISTRITO90-	Number of fires that were simultaneously active (fully or partially) during the first 90 minutes of the recorded fire (after the alert date/time) and had their point of origin in the same district as the recorded fire
+NINCSIMULCONCELHO90-	Number of fires that were simultaneously active (fully or partially) during the first 90 minutes of the recorded fire (after the alert date/time) and had their point of origin in the same municipality as the recorded fire
+NINCSIMUL500090-	Number of fires that were simultaneously active (fully or partially) during the first 90 minutes of the recorded fire (after the alert date/time) and had their point of origin within a 5000-meter radius around the recorded fire's point of origin
+DISTINCSIMUL500090-	Number of fires that were simultaneously active (fully or partially) during the first 90 minutes of the recorded fire (after the alert date/time) and had their point of origin in the same district and within a 5000-meter radius around the recorded fire's point of origin
+AREATOTALINCSIMUL500090-	Sum of the burned areas of all fires that were simultaneously active (fully or partially) during the first 90 minutes of the recorded fire (after the alert date/time) and had their point of origin in the same district and within a 5000-meter radius around the recorded fire's point of origin
+CAUSA-	Numerical code for the fire's cause
+TIPOCAUSA-	Type of cause
+GRUPOCAUSA-	Cause group
+DESCRICAO-	Description of the cause
+REACENDIMENTO_INCENDIOPAI-	If reignited, code of the parent fire
+ORIGINOUREACENDIMENTO-	If it caused reignition (0 or 1)
+FONTEALERTA-	Source of the alert
+CLASSEAREA-	Burned area class
+QO-	Operational grid identification (1 x 1 km)
+TEMPO1INTERVENCAO-	Time between the alert and the first intervention (minutes)
+TEMPORESOLUCAO-	Time between the first intervention and resolution (minutes)
+TEMPORESCALDO-	Time between resolution and conclusion (minutes)
+VELOCIDADEPROPAGACAO-	Average rate of fire spread (ha/hour)
+RCM-	RCM or PIR
+TEMPERATURA-	Temperature
+HUMIDADERELATIVA-	Relative Humidity
+VENTOINTENSIDADE-	Wind intensity (Km/h)
+VENTOINTENSIDADE_VETOR-	Wind intensity vector (Km/h)
+VENTODIRECAO_VETOR-	Wind direction vector (Degrees)
+PRECIPITACAO-	Precipitation
+VENTODIRECAO-	Wind direction (Degrees)
+HFFMC-	FFMC index at the time of the alert
+HISI-	ISI index at the time of the alert
+HFWI-	FWI index at the time of the alert
+MAXFWIH_48H_POSEXTINCAO-	Maximum FWI index in the 48 hours after extinction
+MAXFFMCH_48H_POSEXTINCAO-	Maximum FFMC index in the 48 hours after extinction
+MAXISIH_48H_POSEXTINCAO-	Maximum ISI index in the 48 hours after extinction
+MAXDC_48H_DIAPOSEXTINCAO-	Maximum DC index in the 48 hours after extinction
+MAXBUI_48H_POSEXTINCAO-	Maximum BUI index in the 48 hours after extinction
+MAXDMC_48H_POSEXTINCAO-	Maximum DMC index in the 48 hours after extinction
+
