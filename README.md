@@ -15,6 +15,6 @@ Initially, during the second period, burned areas were classified by vegetation 
 Here, new data acquisition methods and presented like functions developed to correct data inaccuracies and to approximate the structure of the two periods. We present the new dataset with associated time-stamped coordinates, facilitating the generation of new insights through cross-referencing with other datasets. This new information is categorized into three groups: Social indicator, including density people and buildings; Physical indicators, including topographic features, land use, and adaptation to fuel models; Meteorological indicators, utilizing location-specific meteorological and fire-related data; Fire database reanalysis, identifying patterns simultaneous fires.
 
 New information is the base to develop new models that can forecast fire behavior or can help the decision in fire prevention. A description of most relevant variables is presented to decode some insights. We also establish a way to new users uses daily data series with some indicators associated with. The concept of fire regime is review with analyses that take in account the distribution of several variables stratified by district and decade. This new approach highlights that fire regimes are not static but have accentuated variability over time.
-All data can be downloaded from the following link: ICNF Data Download.
-All analyses can be performed using the R scripts available at: SGIF GitHub Repository.
+All data can be downloaded from the following link wich will regulary updated: https://fogos.icnf.pt/download/ExportarDadosSGIF
+All analyses can be performed using the R scripts available at RSGIF GitHub Repository.
 
