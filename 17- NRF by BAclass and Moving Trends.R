@@ -1,76 +1,85 @@
-# Write data to CSV+
-#write.csv(fogos, file = "fogos.csv", quote = TRUE, col.names = TRUE,  fileEncoding = "UTF-8", na = "")
-# Pacotes necessários
-# Pacotes necessários
-# Pacotes necessários
-library(ggplot2)
-library(dplyr)
-library(scales)  # Para formatar os rótulos percentuais
+#--------------------------------------------------------------
+# Optional: Save the dataset to a CSV file (currently commented)
+# write.csv(fogos, file = "data/fogos.csv", quote = TRUE, col.names = TRUE,  fileEncoding = "UTF-8", na = "")
 
+#--------------------------------------------------------------
+# Load required libraries
+library(ggplot2)   # For plotting
+library(dplyr)     # For data manipulation
+library(scales)    # For formatting axis labels as percentages
+
+#--------------------------------------------------------------
+# ZONE 1: Categorize fire events by total burned area
 
 fogos <- fogos %>%
         mutate(ClasseArea = case_when(
-                AreaTotal <= 1 ~ "[0-1ha]",
-                AreaTotal > 1 & AreaTotal <= 10 ~ "]1-10ha]",
-                AreaTotal > 10 & AreaTotal <= 100 ~ "]10-100ha]",
-                AreaTotal > 100 & AreaTotal <= 1000 ~ "]100-1000ha]",
-                AreaTotal > 1000 ~ "]1000-+1000ha]"
+                AreaTotal <= 1 ~ "[0-1ha]",                    # Fires up to 1 hectare
+                AreaTotal > 1 & AreaTotal <= 10 ~ "]1-10ha]",  # Fires between 1 and 10 ha
+                AreaTotal > 10 & AreaTotal <= 100 ~ "]10-100ha]", # Fires between 10 and 100 ha
+                AreaTotal > 100 & AreaTotal <= 1000 ~ "]100-1000ha]", # Fires between 100 and 1000 ha
+                AreaTotal > 1000 ~ "]1000-+1000ha]"            # Fires greater than 1000 ha
         ))
 
+# Alternative classification (commented out)
+# fogos <- fogos %>%
+#   mutate(ClasseArea = case_when(
+#     AreaTotal <= 10000 ~ "[0-10000ha]",
+#     AreaTotal > 10000 ~ "]10000-+10000ha]"
+#   ))
 
-#fogos <- fogos %>%
-#        mutate(ClasseArea = case_when(
-#                AreaTotal <= 10000 ~ "[0-10000ha]",
-#                AreaTotal > 10000 ~ "]10000-+10000ha]"
-#        ))
+#--------------------------------------------------------------
+# ZONE 2: Calculate the percentage of fires in each area class per year
 
-
-# Calcular a contagem total de incêndios por ano
 df_percent <- fogos %>%
         group_by(Ano, ClasseArea) %>%
-        summarise(n = n(), .groups = "drop") %>%
+        summarise(n = n(), .groups = "drop") %>%        # Count number of fires
         group_by(Ano) %>%
-        mutate(percent = (n / sum(n)) * 100)
+        mutate(percent = (n / sum(n)) * 100)            # Convert to percentage
 
-# Encontrar a posição final para os labels
+# Extract label positions for latest year for plotting
 df_labels <- df_percent %>%
         group_by(ClasseArea) %>%
-        filter(Ano == max(Ano))  # Último ano disponível para cada ClasseArea
+        filter(Ano == max(Ano))                         # Keep only last year
 
-# Criar o gráfico
+#--------------------------------------------------------------
+# ZONE 3: Plot percentage of fires by area class over time
+
 ggplot(df_percent, aes(x = Ano, y = percent, color = ClasseArea, group = ClasseArea)) +
         geom_line(size = 1) +
         geom_point(size = 2) +
-        geom_smooth(method = "lm", se = FALSE, linetype = "dashed", size = 0.8) +  # Linhas de tendência
-        scale_color_grey(start = 0.2, end = 0.8) +  # Tons de cinza
-        scale_y_log10(labels = label_percent(scale = 1)) +  # Escala log e valores percentuais
-        annotation_logticks(sides = "l") +  # Adiciona ticks ao eixo Y
+        geom_smooth(method = "lm", se = FALSE, linetype = "dashed", size = 0.8) +  # Linear trend
+        scale_color_grey(start = 0.2, end = 0.8) +                                  # Greyscale palette
+        scale_y_log10(labels = label_percent(scale = 1)) +                         # Log-scale Y-axis
+        annotation_logticks(sides = "l") +                                         # Log ticks on Y-axis
         labs(
                 title = "Proporção de incêndios por Classe de Área ao longo dos anos",
                 x = "Ano",
                 y = "Percentagem (%) (escala log10)"
         ) +
         theme_minimal() +
-        theme(legend.position = "none") +  # Remover legenda
+        theme(legend.position = "none") +  # Hide legend
         geom_text(data = df_labels, 
                   aes(x = Ano, y = percent, label = ClasseArea), 
-                  hjust = 0, vjust = 0.5,  # Melhor alinhamento dentro do gráfico
-                  size = 3, fontface = "bold", nudge_x = 1)  # Reduz tamanho e move para dentro do gráfico
+                  hjust = 0, vjust = 0.5, size = 3, fontface = "bold", nudge_x = 1)
 
-#---------------------------------------------------------------------------------------------------------
-# Calcular o número de incêndios por ano e por ClasseArea
+#--------------------------------------------------------------
+# ZONE 4: Count number of fires by year and area class
+
 df_count <- fogos %>%
         group_by(Ano, ClasseArea) %>%
         summarise(n = n(), .groups = "drop")
 
-# Criar uma função para calcular o declive da reta de ajuste nos 10 anos anteriores
+#--------------------------------------------------------------
+# ZONE 5: Calculate trend slope using a 10-year moving window
+
+# Define function to compute slope over rolling window
 calc_slope <- function(df, window = 10) {
         df %>%
                 arrange(Ano) %>%
                 mutate(slope = map_dbl(seq_len(n()), ~ {
                         if (.x > window) {
                                 modelo <- lm(n ~ Ano, data = df[(.x - window + 1):.x, ])
-                                coef(modelo)[2]  # Retorna o coeficiente angular (declive)
+                                coef(modelo)[2]
                         } else {
                                 NA_real_
                         }
@@ -78,45 +87,41 @@ calc_slope <- function(df, window = 10) {
                 filter(!is.na(slope))
 }
 
-# Aplicar a função para calcular o declive estratificado por ClasseArea
+# Apply slope calculation by area class
 df_slope <- df_count %>%
         group_by(ClasseArea) %>%
         do(calc_slope(.)) %>%
         ungroup()
 
-# Criar o gráfico do declive ao longo do tempo, estratificado por ClasseArea
+#--------------------------------------------------------------
+# ZONE 6: Plot trend slopes over time by area class
+
 ggplot(df_slope, aes(x = Ano, y = slope, color = ClasseArea, group = ClasseArea)) +
-        geom_line(size = 1) +  # Exibe a linha baseada nos dados
+        geom_line(size = 1) +
         geom_point(size = 2) +
-        scale_color_manual(values = grey.colors(length(unique(df_slope$ClasseArea)))) +  # Usar tons de cinza
+        scale_color_viridis_d(option = "D", begin = 0.2, end = 0.8) +
         labs(
-                title = "Declive da tendência do número de incêndios nos 10 anos anteriores por Classe de Área",
-                x = "Ano",
-                y = "Declive da reta de ajuste (10 anos)"
+                title = "Trend slope of the moving regression lines (10-year window) for the number of fires by Burned Area Class",
+                x = "Year",
+                y = "slope of the moving regression lines (10-year window)"
         ) +
         theme_minimal() +
         theme(
-                legend.position = "none",  # Remove a legenda
-                strip.text = element_text(size = 10),  # Ajuste no tamanho do título de cada gráfico
-                plot.title = element_text(hjust = 0.5),  # Centraliza o título
-                axis.text.x = element_text(angle = 45, hjust = 1)  # Ajuste de leitura dos valores do eixo X
+                legend.position = "none",
+                strip.text = element_text(size = 10),
+                plot.title = element_text(hjust = 0.5, size = 22, face = "bold"),
+                axis.title = element_text(size = 20),
+                axis.text = element_text(angle = 45, hjust = 1, size = 17)
         ) +
-        facet_wrap(~ClasseArea, scales = "free_y") +  # Escalas livres no eixo Y
-        scale_x_continuous(breaks = seq(min(df_slope$Ano), max(df_slope$Ano), by = 2))  # Eixo X de 2 em 2 anos
+        facet_wrap(~ClasseArea, scales = "free_y") +
+        scale_x_continuous(breaks = seq(min(df_slope$Ano), max(df_slope$Ano), by = 2))
 
-#---------------------------------------------------------------------
+#--------------------------------------------------------------
+# ZONE 7: Calculate both slope and RMSE per year using moving window
 
+library(purrr)  # For map_dbl()
 
-library(dplyr)
-library(purrr)
-library(ggplot2)
-
-# 1. Calcular o número de incêndios por ano e por ClasseArea
-df_count <- fogos %>%
-        group_by(Ano, ClasseArea) %>%
-        summarise(n = n(), .groups = "drop")
-
-# 2. Função para calcular slope e RMSE
+# Define function to compute both slope and RMSE
 calc_slope_rmse <- function(df, window = 10) {
         df %>%
                 arrange(Ano) %>%
@@ -124,7 +129,7 @@ calc_slope_rmse <- function(df, window = 10) {
                         slope = map_dbl(seq_len(n()), ~ {
                                 if (.x > window) {
                                         modelo <- lm(n ~ Ano, data = df[(.x - window + 1):.x, ])
-                                        coef(modelo)[2]  # Coeficiente angular (slope)
+                                        coef(modelo)[2]
                                 } else {
                                         NA_real_
                                 }
@@ -132,30 +137,32 @@ calc_slope_rmse <- function(df, window = 10) {
                         rmse = map_dbl(seq_len(n()), ~ {
                                 if (.x > window) {
                                         modelo <- lm(n ~ Ano, data = df[(.x - window + 1):.x, ])
-                                        sqrt(mean(residuals(modelo)^2))  # RMSE
+                                        sqrt(mean(residuals(modelo)^2))
                                 } else {
                                         NA_real_
                                 }
                         })
                 ) %>%
-                filter(!is.na(slope) & !is.na(rmse))  # Remove linhas com NA
+                filter(!is.na(slope) & !is.na(rmse))
 }
 
-# 3. Aplicar a função para calcular slope e RMSE estratificado por ClasseArea
+# Apply function
 df_slope_rmse <- df_count %>%
         group_by(ClasseArea) %>%
         do(calc_slope_rmse(.)) %>%
         ungroup()
 
-# 4. Tabela com RMSE ao longo do tempo para cada classe
+#--------------------------------------------------------------
+# ZONE 8: Table of RMSE values by year and area class
+
 tabela_rmse <- df_slope_rmse %>%
         select(Ano, ClasseArea, rmse) %>%
         arrange(ClasseArea, Ano)
-
-# Exibir a tabela
 print(tabela_rmse)
 
-# 5. Gráfico do RMSE ao longo do tempo para cada classe
+#--------------------------------------------------------------
+# ZONE 9: Plot RMSE per year by area class
+
 ggplot(df_slope_rmse, aes(x = Ano, y = rmse, color = ClasseArea, group = ClasseArea)) +
         geom_line(size = 1) +
         geom_point(size = 2) +
@@ -175,17 +182,68 @@ ggplot(df_slope_rmse, aes(x = Ano, y = rmse, color = ClasseArea, group = ClasseA
         facet_wrap(~ClasseArea, scales = "free_y") +
         scale_x_continuous(breaks = seq(min(df_slope_rmse$Ano), max(df_slope_rmse$Ano), by = 2))
 
-#---------------------------------------------------------------------
-# Remover valores NA e garantir que 'Ano' seja numérico
-df_count <- df_count %>%
-        filter(!is.na(Ano)) %>%
-        mutate(Ano = as.numeric(Ano))
+#--------------------------------------------------------------
+# ZONE 10: Correlation matrix between area classes for different time periods
 
-# Criar o gráfico
+library(tidyverse)
+library(ggcorrplot)
+
+# Add period classification to each year
+df_slope <- df_slope %>%
+        mutate(Periodo = case_when(
+                Ano >= 1990 & Ano <= 1999 ~ "1990-1999",
+                Ano >= 2000 & Ano <= 2009 ~ "2000-2009",
+                Ano >= 2010 & Ano <= 2019 ~ "2010-2019",
+                Ano >= 2020 & Ano <= 2024 ~ "2020-2024"
+        ))
+
+# List unique periods
+periodos <- unique(na.omit(df_slope$Periodo))
+
+# Function to create correlation plot for a given period
+plot_ggcorr <- function(df, periodo) {
+        mat_corr <- df %>%
+                filter(Periodo == periodo) %>%
+                select(Ano, ClasseArea, slope) %>%
+                pivot_wider(names_from = ClasseArea, values_from = slope) %>%
+                select(-Ano) %>%
+                cor(use = "pairwise.complete.obs")
+        
+        ggcorrplot(
+                mat_corr,
+                method = "square",
+                lab = TRUE,
+                lab_size = 4,
+                type = "upper",
+                title = paste("Trends in the period", periodo)
+        ) +
+                theme_minimal() +
+                theme(
+                        plot.title = element_text(size = 16, face = "bold"),
+                        axis.title = element_blank(),
+                        axis.text.x = element_text(size = 12, angle = 45, hjust = 1),
+                        axis.text.y = element_text(size = 12),
+                        axis.ticks = element_blank()
+                )
+}
+
+# Create list of correlation plots by period
+graficos <- lapply(periodos, function(p) plot_ggcorr(df_slope, p))
+
+# Display all correlation plots
+library(patchwork)
+wrap_plots(graficos, ncol = 2)
+
+#--------------------------------------------------------------
+# ZONE 11: Final plot of number of fires per year (log scale)
+
+library(viridis)
+
 ggplot(df_count, aes(x = Ano, y = n, color = ClasseArea, group = ClasseArea)) +
         geom_line(size = 1, alpha = 0.7) +
         geom_point(size = 2, alpha = 0.7) +
-        scale_color_grey(start = 0.2, end = 0.8) +
+        geom_smooth(method = "loess", se = TRUE, linetype = "dashed", size = 0.8) +
+        scale_color_viridis_d(option = "D", begin = 0.2, end = 0.8) +
         scale_y_log10(
                 labels = scales::label_number(scale_cut = scales::cut_short_scale()),
                 n.breaks = 6
@@ -196,25 +254,28 @@ ggplot(df_count, aes(x = Ano, y = n, color = ClasseArea, group = ClasseArea)) +
                 x = "Year",
                 y = "Num of rural fires (scale log10)"
         ) +
-        theme_minimal() +
+        theme_minimal(base_size = 14) +  # Aumenta fonte base
         theme(
                 legend.position = "none",
                 panel.grid.minor = element_blank(),
-                plot.title = element_text(hjust = 0.5)  # Centraliza o título
+                plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),
+                axis.title = element_text(size = 16),
+                axis.text = element_text(size = 14)
         ) +
         geom_text(
                 data = df_labels,
                 aes(label = ClasseArea),
                 hjust = 0,
                 vjust = 0.5,
-                size = 3.5,
+                size = 5,  # Aumentado
                 fontface = "bold",
-                nudge_x = 0.5,  # Ajuste fino para evitar cortes
+                nudge_x = 0.5,
                 check_overlap = TRUE
         ) +
         coord_cartesian(
-                xlim = c(min(df_count$Ano), max(df_count$Ano) + 3),  # Espaço para labels
-                ylim = c(1, 100000),  # Define o valor máximo de Y como 100.000
+                xlim = c(min(df_count$Ano), max(df_count$Ano) + 3),
+                ylim = c(1, 100000),
                 clip = "off"
         ) +
-        scale_x_continuous(breaks = seq(min(df_count$Ano), max(df_count$Ano), by = 2))  # Definir intervalos de 1 no eixo X
+        scale_x_continuous(breaks = seq(min(df_count$Ano), max(df_count$Ano), by = 2))
+
