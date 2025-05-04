@@ -14,6 +14,7 @@ if (!require(lubridate)) install.packages("lubridate")
 if (!require(purrr)) install.packages("purrr")
 if (!require(pbapply)) install.packages("pbapply")
 if (!require(utils)) install.packages("utils")
+if (!require(httr)) install.packages("httr")
 
 # Load necessary libraries
 library(jmv)
@@ -30,9 +31,12 @@ library(sf)
 library(utils)
 library(dplyr)
 library(purrr)
+library(httr)
 
 # Set the project directory
-project_dir <- "C:/user/rui/Doutoramento/SGIF-Database struture/Data/"  # Replace with your desired project directory
+project_dir <- "C:/user/SGIF-Database struture/Data/"  # Replace with your desired project directory
+# Set the working directory to the project directory
+setwd(project_dir)
 
 bdown=function(url, file){
         library('RCurl')
@@ -60,38 +64,35 @@ replace_problems <- function(x) {
 }
 
 
+# Authentication credentials
+userhttps <- "xxxxx" # ask for this credentials to rui.almeida@icnf.pt
+passhttps <- "xxxxx" # ask for this credentials to rui.almeida@icnf.pt
+auth <- authenticate(userhttps, passhttps, type = "basic")
 
+# Define a helper function to download files with authentication
+bdown_auth <- function(remote_url, local_path) {
+        res <- GET(remote_url, auth)
+        if (status_code(res) == 200) {
+                writeBin(content(res, "raw"), local_path)
+                message("Downloaded: ", local_path)
+        } else {
+                warning("Failed to download: ", remote_url)
+        }
+}
 
-## ...and now just give remote and local paths     
-ret = bdown("https://fogos.icnf.pt/download/ExportarDadosSGIF/Data2001_now.csv", "Data2001_now.csv")
-
-## ...and now just give remote and local paths     
-ret = bdown("https://fogos.icnf.pt/download/ExportarDadosSGIF/Data1980_2000.csv", "Data1980_2000.csv")
-
-## ...and now just give remote and local paths     
-ret = bdown("https://fogos.icnf.pt/download/ExportarDadosSGIF/Data1980_2000eliminados.csv", "Data1980_2000eliminados.csv")
-
-## ...and now just give remote and local paths     
-ret = bdown("https://fogos.icnf.pt/download/ExportarDadosSGIF/Data2001_noweliminados.csv", "Data2001_noweliminados.csv")
-
-## ...and now just give remote and local paths     
-ret = bdown("https://fogos.icnf.pt/download/ExportarDadosSGIF/DailyMeanMeteo1980_2023.csv", "DailyMeanMeteo1980_2023.csv")
-
-## ...and now just give remote and local paths     
-ret = bdown("https://fogos.icnf.pt/download/ExportarDadosSGIF/DailyMeanMeteoDistrito1980_2023.csv", "DailyMeanMeteoDistrito1980_2023.csv")
-
-## ...and now just give remote and local paths     
-ret = bdown("https://fogos.icnf.pt/download/ExportarDadosSGIF/Fire_TotalMeteo.csv", "Fires_TotalMeteo")
-
-## ...and now just give remote and local paths     
-ret = bdown("https://fogos.icnf.pt/download/ExportarDadosSGIF/AdministrativeRelations.csv", "AdministrativeRelations")
-
-
-rm(ret)
+# Download files
+bdown_auth("https://fogos.icnf.pt/download/ExportarDadosSGIF/Data2001_now.csv", "data/Data2001_now.csv")
+bdown_auth("https://fogos.icnf.pt/download/ExportarDadosSGIF/Data1980_2000.csv", "data/Data1980_2000.csv")
+bdown_auth("https://fogos.icnf.pt/download/ExportarDadosSGIF/Data1980_2000eliminados.csv", "data/Data1980_2000eliminados.csv")
+bdown_auth("https://fogos.icnf.pt/download/ExportarDadosSGIF/Data2001_noweliminados.csv", "data/Data2001_noweliminados.csv")
+bdown_auth("https://fogos.icnf.pt/download/ExportarDadosSGIF/DailyMeanMeteoFrom1980.csv", "data/DailyMeanMeteoFrom1980.csv")
+bdown_auth("https://fogos.icnf.pt/download/ExportarDadosSGIF/DailyMeanMeteoDistritoFrom1980.csv", "data/DailyMeanMeteoDistritoFrom1980.csv")
+bdown_auth("https://fogos.icnf.pt/download/ExportarDadosSGIF/Fire_TotalMeteo.csv", "data/Fires_TotalMeteo.csv")
+bdown_auth("https://fogos.icnf.pt/download/ExportarDadosSGIF/AdministrativeRelations.csv", "data/AdministrativeRelations.csv")
 
 # Read the CSV file with semicolon as the column separator and ISO-8859-1 encoding
 Data1980_2000 <- read_delim(
-        "Data1980_2000.csv",
+        "data/Data1980_2000.csv",
         delim = ",",
         locale = locale(encoding = "UTF-8"),
         show_col_types = FALSE  # Suppress column types message
@@ -99,35 +100,35 @@ Data1980_2000 <- read_delim(
 
 # Read the CSV file with semicolon as the column separator and ISO-8859-1 encoding
 Data1980_2000eliminados <- read_delim(
-        "Data1980_2000eliminados.csv",
+        "data/Data1980_2000eliminados.csv",
         delim = ",",
         locale = locale(encoding = "UTF-8"),
         show_col_types = FALSE  # Suppress column types message
 )
 
 Data2001_now <- read_delim(
-        "Data2001_now.csv",
+        "data/Data2001_now.csv",
         delim = ",",
         locale = locale(encoding = "UTF-8"),
         show_col_types = FALSE  # Suppress column types message
 )
 
 Data2001_noweliminados <- read_delim(
-        "Data2001_noweliminados.csv",
+        "data/Data2001_noweliminados.csv",
         delim = ",",
         locale = locale(encoding = "UTF-8"),
         show_col_types = FALSE  # Suppress column types message
 )
 
-DailyMeanMeteoDistrito1980_2023 <- read_delim(
-        "DailyMeanMeteoDistrito1980_2023.csv",
+DailyMeanMeteoDistritoFrom1980 <- read_delim(
+        "data/DailyMeanMeteoDistritoFrom1980.csv",
         delim = ",",
         locale = locale(encoding = "UTF-8"),
         show_col_types = FALSE  # Suppress column types message
 )
 
-DailyMeanMeteo1980_2023 <- read_delim(
-        "DailyMeanMeteo1980_2023.csv",
+DailyMeanMeteoFrom1980 <- read_delim(
+        "data/DailyMeanMeteoFrom1980.csv",
         delim = ",",
         locale = locale(encoding = "UTF-8"),
         show_col_types = FALSE  # Suppress column types message
@@ -135,7 +136,7 @@ DailyMeanMeteo1980_2023 <- read_delim(
 
 
 Fires_TotalMeteo <- read_delim(
-        "Fires_TotalMeteo",
+        "data/Fires_TotalMeteo.csv",
         delim = ",",
         locale = locale(encoding = "UTF-8"),
         show_col_types = FALSE  # Suppress column types message
@@ -143,7 +144,7 @@ Fires_TotalMeteo <- read_delim(
 
 
 AdministrativeRelations <- read_delim(
-        "AdministrativeRelations",
+        "data/AdministrativeRelations.csv",
         delim = ",",
         locale = locale(encoding = "UTF-8"),
         show_col_types = FALSE  # Suppress column types message
@@ -193,8 +194,6 @@ columns_to_remove_existing <- intersect(columns_to_remove, existing_columns)
 fogos <- fogos %>%
         dplyr::select(-all_of(columns_to_remove_existing))
 
-
-
 # Rename column 'Tipo' to 'TipoFogo'
 fogos <- fogos %>%
         rename(TipoFogo = Tipo)
@@ -207,15 +206,22 @@ Fires_TotalMeteo <- Fires_TotalMeteo %>%
                                 codigo)
         )
 
-
-
-
-# Load the shapefile
+# URL and destination
 url <- "https://fogos.icnf.pt/download/ExportarDadosSGIF/CAOP2012.zip"
-download.file(url, destfile = "CAOP2012.zip", mode = "wb")
-unzip("CAOP2012.zip", exdir = "CAOP2012")
+destfile <- "data/CAOP2012.zip"
 
-shapefile_path <- list.files("CAOP2012", pattern = "\\.shp$", full.names = TRUE)
+# Download with authentication
+res <- GET(url, auth)
+if (status_code(res) == 200) {
+        writeBin(content(res, "raw"), destfile)
+        message("Downloaded: ", destfile)
+        unzip(destfile, exdir = "data/CAOP2012")
+} else {
+        stop("Failed to download shapefile. Status: ", status_code(res))
+}
+unzip("data/CAOP2012.zip", exdir = "data/CAOP2012")
+
+shapefile_path <- list.files("data/CAOP2012", pattern = "\\.shp$", full.names = TRUE)
 shp_data <- st_read(shapefile_path)
 
 # Filter rows where INE is NA
@@ -305,5 +311,3 @@ rm ( columns_to_remove, columns_to_remove_existing, existing_columns, fogoscolum
 #rm(Data1980_2000, Data1980_2000eliminados, Data2001_now, Data2001_noweliminados)
 #rm(bdown, clean_text, replace_problems)
 #rm(fire_Base, fire_LandUse, fire_Meteo, fire_Simultaneity, fogosDescriptives, fogoseliminados)
-
-
