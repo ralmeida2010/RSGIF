@@ -23,16 +23,15 @@ dados <- fogos[, c("Codigo", "INE", "Distrito", "Mes", "Hora", "DHInicio", "DHFi
 # Data cleaning and feature engineering
 dados <- dados %>%
     mutate(
-        # Estimate agricultural area (replace NA with 0)
-        AreaAgricEstimado = ifelse(is.na(AreaAgric), 0, AreaAgric),
+        
         # Set AreaTotalEstimado to NA if AreaTotal is <= 0
         AreaTotalEstimado = ifelse(AreaTotal <= 0, NA, AreaTotal),
         # Set populated area to NA if total area is 0
-        AreaPovEstimado = ifelse(AreaTotal == 0, NA, AreaPov),
+        AreaPovEstimado = ifelse(AreaTotal <= 0, NA, AreaPov),
         # Set bush area to NA if total area is 0
-        AreaMatoEstimado = ifelse(AreaTotal == 0, NA, AreaMato),
+        AreaMatoEstimado = ifelse(AreaTotal <= 0, NA, AreaMato),
         # Set agricultural area to NA if total area is 0
-        AreaAgricEstimado = ifelse(AreaTotal == 0, NA, AreaAgric)
+        AreaAgricEstimado = ifelse(AreaTotal <= 0, NA, AreaAgric)
     )
 
 # Calculate fire duration and handle anomalies
@@ -80,7 +79,7 @@ imputacao <- mice(
     dados_imp, 
     method = "pmm",  # Predictive Mean Matching
     m = 10,          # Number of imputed datasets
-    maxit = 100,     # Maximum iterations
+    maxit = 10,     # Maximum iterations
     seed = 1234      # For reproducibility
 )
 
@@ -125,12 +124,12 @@ dados$DHFimEstimado <- as.POSIXct(dados$DHFimEstimado, tz = "UTC")
 fogos_actualizado <- fogos
 
 # Transfer imputed values to original dataset
-fogos_actualizado$AreaTotalEstimado <- dados_imp$AreaTotalEstimado
-fogos_actualizado$duration <- dados_imp$duration
+fogos_actualizado$AreaTotalEstimado <- dados_imputados$AreaTotalEstimado
+fogos_actualizado$DuracaoHorasEstimado <- dados_imputados$duration/60
 
 # Calculate estimated end time based on imputed duration
 fogos_actualizado$DHFimEstimado <- fogos_actualizado$DHInicio + 
-    lubridate::duration(fogos_actualizado$duration * 60)  # Convert minutes to seconds
+    lubridate::duration(fogos_actualizado$DuracaoHorasEstimado * 60*60)  # Convert minutes to seconds
 
 # Ensure estimated end time is in POSIXct format
 fogos_actualizado$DHFimEstimado <- as.POSIXct(fogos_actualizado$DHFimEstimado, tz = "UTC")
@@ -160,10 +159,10 @@ fogos_actualizado$Observacoes <- ifelse(
 )
 
 # Clean up observation notes
-fogos_actualizado$Observacoes <- trimws(fogos_actualizado$Observacoes, which = "left")
+#fogos_actualizado$Observacoes <- trimws(fogos_actualizado$Observacoes, which = "left")
 
 # Clean up environment
-rm(dados, dados_imp, dados_imputados, dados_selecionados, fogos_atualizado, fogos_filtrado, fogosi, fogos)
+rm(dados, dados_imp, dados_imputados, dados_selecionados,  fogos_filtrado, fogosi, fogos)
 
 # Replace original dataset with updated version
 fogos <- fogos_actualizado
@@ -201,11 +200,8 @@ fogos <- fogos[, c("Codigo","CodigoSado", "Ano","Dia", "Mes", "Hora", "TipoFogo"
                    "MaxFFMCh_48h_PosExtincao", "MaxISIh_48h_PosExtincao", "MaxDC_48h_DiaPosExtincao", 
                    "MaxDMC_48h_PosExtincao", "MaxBUI_48h_PosExtincao", "NIncSimul5000", "DistIncSimul5000", 
                    "ClassificacaoRegisto","Observacoes")]
+library(dplyr)
 
-# Rename duration column
-fogos <- fogos %>%
-    select(-DuracaoHoras) %>%
-    rename(DuracaoMinutos = duration)
 
 # Data validation checks
 # Check 1: Estimated end time should be after start time
@@ -230,3 +226,38 @@ fogos$check_5 <- with(fogos, is.na(DH1Intervencao) | is.na(DHResolucao) | is.na(
 # Remove validation check columns (keeping just the clean data)
 fogos <- fogos %>%
     select(-check_1, -check_2, -check_3, -check_4, -check_5)
+library(dplyr)
+library(purrr)
+library(tidyr)
+library(sf)
+
+# If sf:
+fogos_df <- fogos %>% st_drop_geometry()
+
+# Function to convert summary() of a single column into a tibble row
+summarize_column <- function(colname, x) {
+        s <- summary(x)
+        
+        tibble(
+                Column = colname,
+                Attribute = names(s),
+                Value = as.character(s)
+        )
+}
+
+# Build table
+ts_fogos_df <- map_dfr(
+        names(fogos_df),
+        ~ summarize_column(.x, fogos_df[[.x]])
+) %>%
+        pivot_wider(
+                names_from = Attribute,
+                values_from = Value
+        )
+
+
+
+# Remove validation check columns (keeping just the clean data)
+fogos <- fogos %>%
+    select(-check_1, -check_2, -check_3, -check_4, -check_5)
+
