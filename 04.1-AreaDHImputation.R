@@ -79,7 +79,7 @@ imputacao <- mice(
     dados_imp, 
     method = "pmm",  # Predictive Mean Matching
     m = 10,          # Number of imputed datasets
-    maxit = 10,     # Maximum iterations
+    maxit = 100,     # Maximum iterations
     seed = 1234      # For reproducibility
 )
 
@@ -260,4 +260,5 @@ ts_fogos_df <- map_dfr(
 # Remove validation check columns (keeping just the clean data)
 fogos <- fogos %>%
     select(-check_1, -check_2, -check_3, -check_4, -check_5)
+
 
