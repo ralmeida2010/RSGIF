@@ -1,20 +1,31 @@
 # RSGIF
-Portuguese National Database of Forest Fires 1880-until now - R access and script
+RSGIF — Portuguese Rural Fire Database (PRFD), 1980 to the present
 
-The Portuguese Rural Fire Database (PRFD) is a valuable resource that provides detailed insights into wildfire dynamics in Portugal, offering comprehensive data on fire occurrences, causes, and locations. Understanding the processes involved in creating and managing these records is crucial for leveraging the PRFD for effective wildfire prevention and management strategies. 
+R scripts to download, harmonize, enrich and quality-assess the Portuguese Rural Fire Database (PRFD): the official record of rural fires in mainland Portugal kept by the Institute for Nature Conservation and Forests (ICNF), with more than 820,000 fire records since 1980.
 
-Was building upon the research presented by using the PRFD as a pivotal resource for comprehending and managing wildfires in Portugal. 
-Crossing from 1980 to the present, the PRFD provides comprehensive data on wildfire incidents, encompassing fire counts, locations, causes, and extents. 
+Raw data (updated regularly by ICNF): https://fogos.icnf.pt/download/ExportarDadosSGIF/
+Rebuilt database, 1980–2025 (CSV and GeoPackage): https://doi.org/10.5281/zenodo.23165487
+About the database
 
-The database has a history intertwined with the evolution of the forest service and civil protection, shaped by advancements in information technology.
-Two main periods have been established (1980-2000; 2001-now) in relation to methods of information collection and then presented as uniform dataset. 
+The PRFD records the date, time, location, cause and burned area of every rural fire reported in mainland Portugal. Its history follows that of the forest service and of civil protection, and of the information systems they used. The records come in five data structures, which fall into two main periods:
 
-The first period is characterized by limited data; for instance, there was a lack of precise information regarding the exact starting points of fires. During this time, information relied on toponymic data without real coordinates, primarily referencing parish names. Data collection only included information on burned areas in terms of shrubs and stands.
-In the second period, information became more detailed. For example, when a toponym was identified, the name of the nearest location was registered using Carta Militar de Portugal Série M888, a 1:25,000 scale map. Recently, GPS coordinates have been integrated into new radio communication systems for accurate location recording.
-Initially, during the second period, burned areas were classified by vegetation type. Today, fires larger than 10 hectares are associated with geographic perimeters, allowing for cross-validation with other geographic data sources.
-Here, new data acquisition methods and presented like functions developed to correct data inaccuracies and to approximate the structure of the two periods. We present the new dataset with associated time-stamped coordinates, facilitating the generation of new insights through cross-referencing with other datasets. This new information is categorized into three groups: Social indicator, including density people and buildings; Physical indicators, including topographic features, land use, and adaptation to fuel models; Meteorological indicators, utilizing location-specific meteorological and fire-related data; Fire database reanalysis, identifying patterns simultaneous fires.
+1980–2000. Records were processed manually. Fires were located by toponym and parish, without coordinates, and from 1980 to 1993 most records also lack the district and municipality. Burned area was recorded by land type (forest stands, shrubland, agriculture).
+2001 to the present. The Wildfire Information System (SGIF) introduced digital records and GIS validation. The ignition point has coordinates, first derived from the nearest place name of the Carta Militar de Portugal (series M888, 1:25,000) and, increasingly, recorded by GPS through the radio communication systems. Burned-area perimeters are mapped from satellite imagery (Landsat, and Sentinel-2 in recent years), which allows the records to be checked against other geographic sources.
 
-New information is the base to develop new models that can forecast fire behavior or can help the decision in fire prevention. A description of most relevant variables is presented to decode some insights. We also establish a way to new users uses daily data series with some indicators associated with. The concept of fire regime is review with analyses that take in account the distribution of several variables stratified by district and decade. This new approach highlights that fire regimes are not static but have accentuated variability over time.
-All data can be downloaded from the following link wich will regulary updated: https://fogos.icnf.pt/download/ExportarDadosSGIF
-All analyses can be performed using the R scripts available at RSGIF GitHub Repository.
+Because the two periods were collected in different ways, the raw records contain missing locations, missing or impossible end times, zero burned areas, duplicates and changing administrative names. This repository corrects these problems and brings the whole series to a common structure.
 
+What the pipeline does:
+Harmonization. Consolidates the five data structures, standardizes administrative names, removes duplicates, normalizes cause codes and places records without coordinates at their toponym, with an estimated location uncertainty.
+Correction and imputation. Corrects missing, negative and anomalous end times with explicit rules, and fills missing or zero burned areas and durations by multiple imputation (MICE). Original values are kept; imputed values are stored in separate fields and flagged.
+Linkage to burned-area perimeters. Links the fire records to the national burned-area perimeters (PBA), with a confidence flag for each link.
+Enrichment. Adds variables in eight information categories:
+Meteorological: hourly ERA5 weather and the Fire Weather Index and its sub-indices at the ignition point;
+Physical: altitude, slope, terrain ruggedness, solar exposure, land use and fuel model, structural fire danger;
+Vegetation state: MODIS GPP, FAPAR, LAI, NDVI, EVI and NDII7 before ignition;
+Fire behaviour and effects: Fire Radiative Energy (SEVIRI), burn severity (EFFIS and the Portuguese Burn Severity Atlas), link to PT-FireSprd;
+Social: population and building density, road density;
+Operational: nearest fire station and simultaneous fires, as a proxy for pressure on suppression resources.
+Quality assessment. Scores every record on four quality indicators (location, area agreement, imputation, independent confirmation) and assigns a quality tier (A, B, U, C), so that users can choose the records that suit their analysis.
+External validation. Compares the database with EFFIS burned-area perimeters and NASA FIRMS active fires.
+
+The enriched database supports analyses of fire occurrence, causes and burned area over four decades, the calibration of fire-danger indices, studies of human ignitions and exposure, and the development of models for fire prevention and management.
